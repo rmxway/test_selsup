@@ -1,6 +1,42 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useState } from 'react';
 import './styles.scss';
 import editIcon from '/edit.svg';
+
+const initialParams: Param[] = [
+	{
+		id: 1,
+		name: 'Наименование',
+		type: 'string',
+	},
+	{
+		id: 2,
+		name: 'Назначение',
+		type: 'string',
+	},
+	{
+		id: 3,
+		name: 'Длина',
+		type: 'string',
+	},
+	{
+		id: 4,
+		name: 'Ширина',
+		type: 'number',
+	},
+	{
+		id: 5,
+		name: 'Рейтинг',
+		type: 'number',
+	},
+];
+
+const initialModel: Model = {
+	paramValues: [
+		{ paramId: 1, value: 'Брюки' },
+		{ paramId: 2, value: 'Casual' },
+		{ paramId: 3, value: 'Oversize' },
+	],
+};
 
 type ValueType = string | number;
 interface Param {
@@ -14,7 +50,6 @@ interface ParamValue {
 }
 interface Model {
 	paramValues: ParamValue[];
-	// colors: [];
 }
 interface ParameterProps {
 	param: Param;
@@ -23,7 +58,7 @@ interface ParameterProps {
 }
 
 const EditModel: FC<ParameterProps> = ({ param, model, onBlur }) => {
-	const [value, setValue] = useState(model.value);
+	const [value, setValue] = useState(model?.value || '');
 	return (
 		<div className="comp-container">
 			<label htmlFor={String(param.id)}>{param.name}</label>
@@ -51,25 +86,26 @@ const Component: FC<Props> = ({ id: idItem, model, params, remove }) => {
 	const [isEdit, setIsEdit] = useState(false);
 
 	const updateModels = (id: number, value: ValueType) => {
-		const updated = models.map((m) =>
-			m.paramId === id ? { ...m, value } : m,
-		);
-		setModels(updated);
+		const index = models.findIndex((m) => m.paramId === id);
+
+		if (index === -1) {
+			setModels((prev) => [...prev, { paramId: id, value }]);
+		} else {
+			setModels((prev) =>
+				prev.map((m) => (m.paramId === id ? { ...m, value } : m)),
+			);
+		}
 	};
 
 	const toggleEdit = () => {
 		setIsEdit((prev) => !prev);
 	};
 
-	const saveItem = () => {
-		toggleEdit();
-		// post
-	};
-
 	return isEdit ? (
 		<div className="item">
 			{params.map((p) => {
 				const currentModel = models.find((m) => m.paramId === p.id)!;
+
 				return (
 					<EditModel
 						key={p.id}
@@ -79,7 +115,8 @@ const Component: FC<Props> = ({ id: idItem, model, params, remove }) => {
 					/>
 				);
 			})}
-			<button onClick={saveItem}>Save</button>
+			<div className="space" />
+			<button onClick={toggleEdit}>Save</button>
 		</div>
 	) : (
 		<div className="item">
@@ -91,44 +128,18 @@ const Component: FC<Props> = ({ id: idItem, model, params, remove }) => {
 					</strong>
 				</div>
 			))}
+			<div className="space" />
 			<img
 				src={editIcon}
 				alt="edit"
 				className="edit"
 				onClick={toggleEdit}
 			/>
-			<div className="space" />
 			<button className="remove-btn" onClick={() => remove(idItem)}>
 				&times;
 			</button>
 		</div>
 	);
-};
-
-const initialParams: Param[] = [
-	{
-		id: 1,
-		name: 'Наименование',
-		type: 'string',
-	},
-	{
-		id: 2,
-		name: 'Назначение',
-		type: 'string',
-	},
-	{
-		id: 3,
-		name: 'Длина',
-		type: 'string',
-	},
-];
-
-const initialModel: Model = {
-	paramValues: [
-		{ paramId: 1, value: 'Брюки' },
-		{ paramId: 2, value: 'Casual' },
-		{ paramId: 3, value: 'Oversize' },
-	],
 };
 
 interface Item {
@@ -142,14 +153,13 @@ export const App = () => {
 	]);
 
 	const newItem = () => {
-		const lastItem = items[items.length - 1];
 		setItems((prev) => [
 			...prev,
 			{
 				id: Date.now(),
 				model: {
-					paramValues: lastItem.model.paramValues.map((p) => ({
-						paramId: p.paramId,
+					paramValues: initialParams.map((p) => ({
+						paramId: p.id,
 						value: '',
 					})),
 				},
@@ -157,13 +167,7 @@ export const App = () => {
 		]);
 	};
 
-	useEffect(() => {
-		console.log(items);
-	}, [items]);
-
 	const removeItem = (id: number) => {
-		console.log(id);
-
 		setItems((prev) => prev.filter((i) => i.id !== id));
 	};
 
@@ -177,9 +181,9 @@ export const App = () => {
 				{items.map(({ model, id }) => (
 					<Component
 						key={id}
-						{...{ model, id }}
 						params={initialParams}
 						remove={removeItem}
+						{...{ model, id }}
 					/>
 				))}
 			</div>
